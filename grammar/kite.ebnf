@@ -1,0 +1,108 @@
+(* Kite 语法规范 - 完整版 *)
+
+program = { statement } ;
+
+statement = function_decl 
+          | let_binding 
+          | type_definition 
+          | extern_decl
+          | expression_statement ;
+
+(* --- 顶层定义 --- *)
+
+(* 顶层函数：fn 方案 *)
+function_decl = [ "extern" ] , "fn" , identifier , "(" , [ param_list ] , ")" , [ type_expr ] , block_expr ;
+
+(* 外部声明：对接 C ABI *)
+extern_decl = "extern" , ( struct_definition | "fn" , identifier , "(" , [ param_list ] , ")" , [ type_expr ] ) ;
+
+struct_definition = "struct" , identifier , "{" , { struct_field } , "}" ;
+struct_field      = identifier , ":" , type_expr , [ "," ] ;
+
+(* 变体类型定义 (Sum Types) *)
+type_definition = "type" , identifier , [ "(" , type_params , ")" ] , "=" , [ "|" ] , variant_list ;
+variant_list    = variant , { "|" , variant } ;
+variant         = identifier , [ "(" , type_list , ")" ] ;
+
+(* --- 绑定与赋值 --- *)
+
+let_binding = ( "let" | "var" ) , identifier , [ ":" , type_expr ] , "=" , expression ;
+
+(* --- 类型系统 --- *)
+
+type_expr = "i32" | "f32" | "u32" | "bool" | "string" | "void"
+          | identifier              (* 用户定义类型 *)
+          | "[" , type_expr , "]"   (* 数组类型 *)
+          | "(" , [ type_list ] , ")" , "->" , type_expr (* 函数类型使用 -> *)
+          | identifier , "(" , type_list , ")" ;         (* 泛型类型如 Result(t, e) *)
+
+type_list   = type_expr , { "," , type_expr } ;
+type_params = identifier , { "," , identifier } ;
+
+(* --- 表达式层次结构 --- *)
+
+expression = assignment_expr ;
+
+assignment_expr = pipeline_expr { "=" , pipeline_expr } ;
+
+(* 管道操作符：优先级最低的转换 *)
+pipeline_expr = logic_or_expr { "|>" , call_expr } ;
+
+logic_or_expr  = logic_and_expr { "||" , logic_and_expr } ;
+logic_and_expr = comparison_expr { "&&" , comparison_expr } ;
+
+comparison_expr = add_expr { ( "==" | "!=" | "<" | ">" | "<=" | ">=" ) , add_expr } ;
+
+add_expr = mult_expr { ( "+" | "-" ) , mult_expr } ;
+mult_expr = unary_expr { ( "*" | "/" | "%" ) , unary_expr } ;
+
+(* 一元操作符：包含错误传播 ? *)
+unary_expr = [ "!" | "-" | "?" ] , primary_expr ;
+
+primary_expr = literal
+             | identifier
+             | struct_literal
+             | array_literal
+             | "(" , expression , ")"
+             | block_expr
+             | if_expr
+             | match_expr
+             | anonymous_func ;
+
+(* --- 核心表达式组件 --- *)
+
+(* 匿名函数：使用 => 箭头 *)
+anonymous_func = ( identifier | "(" , [ param_list ] , ")" ) , [ type_expr ] , "=>" , ( expression | block_expr ) ;
+
+(* 函数调用 *)
+call_expr = ( identifier | primary_expr ) , "(" , [ arg_list ] , ")" ;
+arg_list  = expression , { "," , expression } ;
+
+(* 复合字面量 *)
+struct_literal = "{" , { identifier , "=" , expression , [ "," ] } , "}" ;
+array_literal  = "[" , [ arg_list ] , "]" ;
+
+(* 块表达式：最后一行作为返回值 *)
+block_expr = "{" , { statement } , [ expression ] , "}" ;
+
+(* --- 控制流 --- *)
+
+if_expr = "if" , expression , block_expr , [ "else" , ( if_expr | block_expr ) ] ;
+
+(* 模式匹配：使用 => *)
+match_expr = "match" , expression , "{" , { match_case } , "}" ;
+match_case = "|" , pattern , [ "if" , expression ] , "=>" , expression ;
+
+pattern    = literal | identifier | "_" | constructor_pattern ;
+constructor_pattern = identifier , [ "(" , pattern_list , ")" ] ;
+pattern_list = pattern , { "," , pattern } ;
+
+(* --- 基础标识符 --- *)
+
+param_list = param , { "," , param } ;
+param      = identifier , [ ":" , type_expr ] ;
+
+literal    = number | string_lit | "true" | "false" | "void" ;
+identifier = letter , { letter | digit | "_" } ;
+number     = [ "-" ] , digit , { digit } , [ "." , { digit } ] ;
+string_lit = '"' , { any_character_except_quote } , '"' ;

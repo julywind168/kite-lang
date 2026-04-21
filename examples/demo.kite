@@ -1,0 +1,48 @@
+// 1. Extern 声明：对接 C 库
+extern struct Vector3 {
+    x: f32,
+    y: f32,
+    z: f32
+}
+
+extern fn InitWindow(width: i32, height: i32, title: string)
+
+// 2. 顶层函数定义：fn 方案
+fn get_default_speed() f32 {
+    10.5
+}
+
+fn calculate_physics(pos: Vector3, dt: f32) Vector3 {
+    let speed = get_default_speed()
+    {
+        x = pos.x + speed * dt,
+        y = pos.y,
+        z = pos.z
+    }
+}
+
+// 3. 模式匹配与匿名函数 (使用 =>)
+fn update_state(state: EntityState) EntityState {
+    match state {
+        | Idle => Moving({x = 0.0, y = 0.0, z = 0.0})
+        | Moving(p) => Moving(calculate_physics(p, 0.016))
+        | _ => state
+    }
+}
+
+// 4. 管道符与高阶函数
+fn main() {
+    let entities = [Idle, Moving({x = 1.0, y = 0.0, z = 0.0})]
+
+    // 匿名函数使用 =>，逻辑非常清晰
+    let active_entities = entities 
+        |> List.map(s => update_state(s))
+        |> List.filter(s => {
+            match s {
+                | Moving(p) => p.x < 100.0
+                | _ => true
+            }
+        })
+
+    print("Kite engine initialized.")
+}

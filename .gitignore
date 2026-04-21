@@ -1,0 +1,26 @@
+# Zig build cache and artifacts
+.zig-cache/
+zig-cache/
+.cache/zig/
+zig-out/
+
+# Zig compiler outputs
+*.o
+*.obj
+*.exe
+*.ilk
+*.pdb
+*.lib
+*.dll
+*.dylib
+*.so
+*.a
+*.lo
+*.lai
+
+# macOS
+.DS_Store
+
+# IDE/editor
+.vscode/
+.idea/
