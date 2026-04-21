@@ -3,6 +3,7 @@
 zig-cache/
 .cache/zig/
 zig-out/
+tmp/
 
 # Zig compiler outputs
 *.o

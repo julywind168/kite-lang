@@ -1,0 +1,8 @@
+node_modules/
+.vscode/**
+.git/**
+*.vsix
+npm-debug.log
+yarn-error.log
+**/.DS_Store
+**/Thumbs.db

@@ -1,0 +1,30 @@
+{
+  "name": "kite-language",
+  "displayName": "Kite Language",
+  "description": "Basic Kite file syntax highlighting for VS Code.",
+  "version": "0.0.1",
+  "publisher": "kite",
+  "engines": {
+    "vscode": "^1.0.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "kite",
+        "aliases": ["Kite", "kite"],
+        "extensions": [".kite"],
+        "configuration": "language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "kite",
+        "scopeName": "source.kite",
+        "path": "syntaxes/kite.tmLanguage.json"
+      }
+    ]
+  }
+}

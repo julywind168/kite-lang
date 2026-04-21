@@ -1,0 +1,37 @@
+{
+  "scopeName": "source.kite",
+  "name": "Kite",
+  "patterns": [
+    {"include": "#comments"},
+    {"include": "#strings"},
+    {"include": "#numbers"},
+    {
+      "match": "\\b(let|pub|fn|extern|fun|const|var|struct|enum|if|else|for|while|return|import|export|match|true|false|null)\\b",
+      "name": "keyword.control.kite"
+    },
+    {
+      "match": "\\b([A-Za-z_][A-Za-z0-9_]*)\\b",
+      "name": "identifier.kite"
+    }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {"name": "comment.line.double-slash.kite", "match": "//.*$"},
+        {"name": "comment.block.kite", "begin": "/\\*", "end": "\\*/"}
+      ]
+    },
+    "strings": {
+      "patterns": [
+        {"name": "string.quoted.double.kite", "begin": "\"", "end": "\"", "patterns": [{"match": "\\\\.", "name": "constant.character.escape.kite"}]},
+        {"name": "string.quoted.single.kite", "begin": "'", "end": "'", "patterns": [{"match": "\\\\.", "name": "constant.character.escape.kite"}]}
+      ]
+    },
+    "numbers": {
+      "patterns": [
+        {"name": "constant.numeric.kite", "match": "\\b\\d+(\\\\.\\d+)?\\b"}
+      ]
+    }
+  },
+  "fileTypes": ["kite"]
+}
