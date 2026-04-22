@@ -4,6 +4,10 @@
   "description": "Basic Kite file syntax highlighting for VS Code.",
   "version": "0.0.1",
   "publisher": "kite",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/julywind168/kite-lang"
+  },
   "engines": {
     "vscode": "^1.0.0"
   },

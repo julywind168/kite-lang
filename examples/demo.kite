@@ -21,6 +21,8 @@ fn calculate_physics(pos: Vector3, dt: f32) Vector3 {
     }
 }
 
+type EntityState = Idle | Moving(Vector3)
+
 // 3. 模式匹配与匿名函数 (使用 =>)
 fn update_state(state: EntityState) EntityState {
     match state {
@@ -44,5 +46,11 @@ fn main() {
             }
         })
 
-    print("Kite engine initialized.")
+    let summary = if active_entities[0] == Idle {
+        "No active movement"
+    } else {
+        "Active entities present"
+    }
+
+    print("Kite engine initialized, " <> summary)
 }

@@ -1,12 +1,6 @@
 (* Kite 语法规范 - 完整版 *)
 
-program = { statement } ;
-
-statement = function_decl 
-          | let_binding 
-          | type_definition 
-          | extern_decl
-          | expression_statement ;
+program = { expression } ;
 
 (* --- 顶层定义 --- *)
 
@@ -41,17 +35,20 @@ type_params = identifier , { "," , identifier } ;
 
 (* --- 表达式层次结构 --- *)
 
-expression = assignment_expr ;
+expression = let_binding | assignment_expr ;
 
 assignment_expr = pipeline_expr { "=" , pipeline_expr } ;
 
 (* 管道操作符：优先级最低的转换 *)
-pipeline_expr = logic_or_expr { "|>" , call_expr } ;
+pipeline_expr = logic_or_expr { "|>" , logic_or_expr } ;
 
 logic_or_expr  = logic_and_expr { "||" , logic_and_expr } ;
 logic_and_expr = comparison_expr { "&&" , comparison_expr } ;
 
-comparison_expr = add_expr { ( "==" | "!=" | "<" | ">" | "<=" | ">=" ) , add_expr } ;
+comparison_expr = concat_expr { ( "==" | "!=" | "<" | ">" | "<=" | ">=" ) , concat_expr } ;
+
+(* 字符串/文本连接（`<>` 表示通用拼接操作符） *)
+concat_expr = add_expr { "<>" , add_expr } ;
 
 add_expr = mult_expr { ( "+" | "-" ) , mult_expr } ;
 mult_expr = unary_expr { ( "*" | "/" | "%" ) , unary_expr } ;
@@ -59,23 +56,24 @@ mult_expr = unary_expr { ( "*" | "/" | "%" ) , unary_expr } ;
 (* 一元操作符：包含错误传播 ? *)
 unary_expr = [ "!" | "-" | "?" ] , primary_expr ;
 
-primary_expr = literal
-             | identifier
-             | struct_literal
-             | array_literal
-             | "(" , expression , ")"
-             | block_expr
-             | if_expr
-             | match_expr
-             | anonymous_func ;
+atom = literal
+    | identifier
+    | struct_literal
+    | array_literal
+    | "(" , expression , ")"
+    | block_expr
+    | if_expr
+    | match_expr
+    | anonymous_func ;
+
+(* 调用作为后缀：避免 primary/call 相互递归 *)
+primary_expr = atom , { "(" , [ arg_list ] , ")" } ;
 
 (* --- 核心表达式组件 --- *)
 
 (* 匿名函数：使用 => 箭头 *)
 anonymous_func = ( identifier | "(" , [ param_list ] , ")" ) , [ type_expr ] , "=>" , ( expression | block_expr ) ;
 
-(* 函数调用 *)
-call_expr = ( identifier | primary_expr ) , "(" , [ arg_list ] , ")" ;
 arg_list  = expression , { "," , expression } ;
 
 (* 复合字面量 *)
@@ -83,7 +81,7 @@ struct_literal = "{" , { identifier , "=" , expression , [ "," ] } , "}" ;
 array_literal  = "[" , [ arg_list ] , "]" ;
 
 (* 块表达式：最后一行作为返回值 *)
-block_expr = "{" , { statement } , [ expression ] , "}" ;
+block_expr = "{" , { expression } , "}" ;
 
 (* --- 控制流 --- *)
 
@@ -103,6 +101,15 @@ param_list = param , { "," , param } ;
 param      = identifier , [ ":" , type_expr ] ;
 
 literal    = number | string_lit | "true" | "false" | "void" ;
-identifier = letter , { letter | digit | "_" } ;
+simple_identifier = letter , { letter | digit | "_" } ;
+identifier = simple_identifier , { "." , simple_identifier } ;
 number     = [ "-" ] , digit , { digit } , [ "." , { digit } ] ;
-string_lit = '"' , { any_character_except_quote } , '"' ;
+
+(* 字符串与转义 *)
+string_lit = '"' , { string_char } , '"' ;
+string_char = ? any character except '"' and '\\' ? | '\\' , escape_seq ;
+escape_seq = '"' | '\\' | 'n' | 't' | 'r' ;
+
+(* 词法基础 *)
+letter = ? 'A'..'Z' | 'a'..'z' ? ;
+digit  = ? '0'..'9' ? ;
