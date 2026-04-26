@@ -125,10 +125,6 @@ fn allocTypeExpr(self: *Parser, te: ast.TypeExpr) ParseError!*ast.TypeExpr {
     return ptr;
 }
 
-fn allocSlice(self: *Parser, comptime T: type, len: usize) ParseError![]T {
-    return try self.arena.allocator().alloc(T, len);
-}
-
 // ═══════════════════════════════════════════════════════════════
 // 顶层声明解析
 // ═══════════════════════════════════════════════════════════════
@@ -303,11 +299,7 @@ fn parseTypeDef(self: *Parser, visibility: ?ast.Visibility) ParseError!ast.TypeD
         if (self.match(.eq)) {
             if (self.match(.minus)) {
                 const num = try self.consume(.number, "expected discriminant number");
-                // 组合 "-" + 数字
-                const combined = try self.arena.allocator().alloc(u8, num.lexeme.len + 1);
-                combined[0] = '-';
-                @memcpy(combined[1..], num.lexeme);
-                discriminant = combined;
+                discriminant = try std.fmt.allocPrint(self.arena.allocator(), "-{s}", .{num.lexeme});
             } else {
                 const num = try self.consume(.number, "expected discriminant number");
                 discriminant = num.lexeme;
@@ -692,25 +684,25 @@ fn parseAtom(self: *Parser) ParseError!*ast.Expr {
     }
 }
 
+/// 从 start 索引向前跳过换行，返回第一个非换行 token 的索引
+fn skipNLAt(self: *const Parser, start: usize) usize {
+    var i = start;
+    while (i < self.tokens.len and self.tokens[i].type == .newline) : (i += 1) {}
+    return i;
+}
+
 /// 匿名结构体字面量以 { identifier: 开始
 fn isAnonStructLiteral(self: *const Parser) bool {
-    const next = self.peekNext();
-    if (next.type == .newline) {
-        // 跳过换行看看
-        var i: usize = self.current + 1;
-        while (i < self.tokens.len and self.tokens[i].type == .newline) : (i += 1) {}
-        if (i < self.tokens.len and self.tokens[i].type == .identifier) {
-            const after = if (i + 1 < self.tokens.len) self.tokens[i + 1].type else .eof;
-            return after == .colon;
-        }
-        return false;
+    const i = self.skipNLAt(self.current + 1);
+    if (i < self.tokens.len and self.tokens[i].type == .identifier) {
+        const j = self.skipNLAt(i + 1);
+        return j < self.tokens.len and self.tokens[j].type == .colon;
     }
-    return next.type == .identifier and self.peekNextNext().type == .colon;
+    return false;
 }
 
 fn peekNextNext(self: *const Parser) Token {
-    var i: usize = self.current + 2;
-    while (i < self.tokens.len and self.tokens[i].type == .newline) : (i += 1) {}
+    const i = self.skipNLAt(self.current + 2);
     if (i < self.tokens.len) return self.tokens[i];
     return self.tokens[self.tokens.len - 1];
 }

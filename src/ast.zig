@@ -486,7 +486,7 @@ pub fn dumpExpr(expr: *Expr, writer: anytype, indent: u32) !void {
             try writer.print("{s} {s}", .{ kw, lb.name });
             if (lb.type_ann) |ta| {
                 try writer.writeAll(": ");
-                try dumpTypeExprInline(ta, writer);
+                try dumpTypeExpr(ta, writer);
             }
             try writer.writeAll(" =\n");
             try dumpExpr(lb.value, writer, indent + 1);
@@ -534,10 +534,6 @@ pub fn dumpTypeExpr(te: *TypeExpr, writer: anytype) !void {
             try writer.writeAll(")");
         },
     }
-}
-
-fn dumpTypeExprInline(te: *TypeExpr, writer: anytype) !void {
-    try dumpTypeExpr(te, writer);
 }
 
 fn dumpPattern(pat: Pattern, writer: anytype) !void {
