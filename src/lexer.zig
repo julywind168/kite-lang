@@ -58,7 +58,6 @@ fn nextToken(self: *Lexer) Token {
             },
             '|' => {
                 if (self.matchExpected('>')) return self.makeToken(.pipe_greater);
-                if (self.matchExpected('|')) return self.makeToken(.pipe_pipe);
                 return self.makeToken(.pipe);
             },
             '+' => return self.makeToken(.plus),
@@ -82,11 +81,12 @@ fn nextToken(self: *Lexer) Token {
             },
             '!' => {
                 if (self.matchExpected('=')) return self.makeToken(.bang_eq);
-                return self.makeToken(.bang);
+                return self.makeErrorToken("unexpected character, use 'not' for logical negation");
             },
             '<' => {
                 if (self.matchExpected('=')) return self.makeToken(.less_eq);
                 if (self.matchExpected('>')) return self.makeToken(.less_greater);
+                if (self.matchExpected('-')) return self.makeToken(.less_minus);
                 return self.makeToken(.less);
             },
             '>' => {
@@ -246,12 +246,13 @@ fn keywordType(lexeme: []const u8) ?TokenType {
         .{ "void", .kw_void },
         .{ "null", .kw_null },
         .{ "pub", .kw_pub },
-        .{ "for", .kw_for },
-        .{ "while", .kw_while },
-        .{ "return", .kw_return },
+        .{ "with", .kw_with },
         .{ "import", .kw_import },
         .{ "export", .kw_export },
-        .{ "const", .kw_const },
+        .{ "todo", .kw_todo },
+        .{ "and", .kw_and },
+        .{ "or", .kw_or },
+        .{ "not", .kw_not },
     });
     return map.get(lexeme);
 }

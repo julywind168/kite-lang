@@ -7,7 +7,7 @@
     {"include": "#numbers"},
     {"include": "#operators"},
     {
-      "match": "\\b(let|pub|fn|extern|fun|const|var|struct|enum|type|if|else|for|while|return|import|export|match|true|false|null)\\b",
+      "match": "\\b(let|pub|fn|extern|var|struct|type|if|else|match|with|todo|import|export|true|false|null|void|and|or|not)\\b",
       "name": "keyword.control.kite"
     },
     {
@@ -37,6 +37,7 @@
     "operators": {
       "patterns": [
         {"name": "keyword.operator.kite", "match": "<>"},
+        {"name": "keyword.operator.kite", "match": "<-"},
         {"name": "keyword.operator.kite", "match": "\\|>"},
         {"name": "keyword.operator.kite", "match": "=="},
         {"name": "keyword.operator.kite", "match": "!="},
@@ -44,8 +45,6 @@
         {"name": "keyword.operator.kite", "match": ">="},
         {"name": "keyword.operator.kite", "match": "->"},
         {"name": "keyword.operator.kite", "match": "=>"},
-        {"name": "keyword.operator.kite", "match": "\\|\\|"},
-        {"name": "keyword.operator.kite", "match": "&&"},
         {"name": "keyword.operator.kite", "match": "\\+"},
         {"name": "keyword.operator.kite", "match": "\\-"},
         {"name": "keyword.operator.kite", "match": "\\*"},

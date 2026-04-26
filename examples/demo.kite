@@ -7,7 +7,14 @@ extern struct Vector3 {
 
 extern fn InitWindow(width: i32, height: i32, title: string)
 
-// 2. 顶层函数定义：fn 方案
+// 2. 带 pub 的公开结构体
+pub struct Entity {
+    position: Vector3,
+    velocity: Vector3,
+    state: EntityState
+}
+
+// 3. 顶层函数定义
 fn get_default_speed() f32 {
     10.5
 }
@@ -21,9 +28,9 @@ fn calculate_physics(pos: Vector3, dt: f32) Vector3 {
     }
 }
 
-type EntityState = Idle | Moving(Vector3)
+type EntityState = Idle | Moving(Vector3) | Destroyed
 
-// 3. 模式匹配与匿名函数 (使用 =>)
+// 4. 模式匹配与匿名函数 (使用 =>)
 fn update_state(state: EntityState) EntityState {
     match state {
         | Idle => Moving({x = 0.0, y = 0.0, z = 0.0})
@@ -32,12 +39,17 @@ fn update_state(state: EntityState) EntityState {
     }
 }
 
-// 4. 管道符与高阶函数
+// 5. 不可变绑定（let 默认不可变）
+let max_entities = 100
+let default_title: string = "Kite Window"
+let gravity: Vector3 = {x = 0.0, y = -9.8, z = 0.0}
+
+// 6. 管道符、高阶函数、索引访问
 fn main() {
     let entities = [Idle, Moving({x = 1.0, y = 0.0, z = 0.0})]
 
-    // 匿名函数使用 =>，逻辑非常清晰
-    let active_entities = entities 
+    // 匿名函数使用 =>
+    let active_entities = entities
         |> List.map(s => update_state(s))
         |> List.filter(s => {
             match s {
@@ -46,11 +58,59 @@ fn main() {
             }
         })
 
-    let summary = if active_entities[0] == Idle {
+    // 索引访问与字段访问
+    let first = active_entities[0]
+    let can_spawn = active_entities.length < max_entities
+
+    let summary = if first == Idle {
         "No active movement"
     } else {
         "Active entities present"
     }
 
     print("Kite engine initialized, " <> summary)
+}
+
+// 7. with 表达式：回调语法糖（等价 Gleam 的 use）
+// 将后续代码块作为回调传入，消除嵌套
+fn process_profiles(user_ids: [string]) [Profile] {
+    with db <- connect_database("game.db")
+    with user <- db.find_user("player_1")
+    let profile = user.load_profile()
+    db.save_profile(profile)
+    profile
+}
+
+// 8. todo 占位符：标记未完成代码
+fn calculate_damage(attacker: Entity, target: Entity) f32 {
+    todo "实现伤害计算公式"
+}
+
+fn send_to_server(data: EntityState) {
+    todo
+}
+
+// 9. 逻辑运算符：and / or / not
+fn should_cull(entity: Entity, bounds: Bounds) bool {
+    let in_view = entity.position.x > bounds.min.x
+        and entity.position.x < bounds.max.x
+        and entity.position.z > bounds.min.z
+        and entity.position.z < bounds.max.z
+
+    let is_active = match entity.state {
+        | Idle => true
+        | Destroyed => false
+        | Moving(p) => p.y > -50.0
+    }
+
+    // not 替代 !，or 替代 ||
+    not in_view or not is_active
+}
+
+// 10. 可变变量用 var
+fn simulate_frame(world: World, dt: f32) World {
+    var elapsed = 0.0
+    var step_count = 0
+    // ... 物理模拟逻辑
+    world
 }
