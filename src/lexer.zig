@@ -7,6 +7,7 @@ pub const Lexer = @This();
 source: []const u8,
 start: usize,
 current: usize,
+start_line: u32,
 line: u32,
 column: u32,
 start_column: u32,
@@ -16,6 +17,7 @@ pub fn init(source: []const u8) Lexer {
         .source = source,
         .start = 0,
         .current = 0,
+        .start_line = 1,
         .line = 1,
         .column = 1,
         .start_column = 1,
@@ -39,10 +41,12 @@ fn nextToken(self: *Lexer) Token {
     while (true) {
         self.skipWhitespace();
         self.start = self.current;
+        self.start_line = self.line;
         self.start_column = self.column;
         if (self.isAtEnd()) return self.makeToken(.eof);
         const c = self.advance();
         switch (c) {
+            '\n' => return self.makeToken(.newline),
             '(' => return self.makeToken(.lparen),
             ')' => return self.makeToken(.rparen),
             '[' => return self.makeToken(.lbracket),
@@ -81,7 +85,7 @@ fn nextToken(self: *Lexer) Token {
             },
             '!' => {
                 if (self.matchExpected('=')) return self.makeToken(.bang_eq);
-                return self.makeErrorToken("unexpected character, use 'not' for logical negation");
+                return self.makeToken(.bang);
             },
             '<' => {
                 if (self.matchExpected('=')) return self.makeToken(.less_eq);
@@ -105,7 +109,7 @@ fn nextToken(self: *Lexer) Token {
 fn skipWhitespace(self: *Lexer) void {
     while (!self.isAtEnd()) {
         switch (self.peek()) {
-            ' ', '\t', '\r', '\n' => _ = self.advance(),
+            ' ', '\t', '\r' => _ = self.advance(),
             else => break,
         }
     }
@@ -152,14 +156,6 @@ fn number(self: *Lexer) Token {
 fn identifier(self: *Lexer) Token {
     while (isIdentChar(self.peek())) {
         _ = self.advance();
-    }
-
-    while (self.peek() == '.' and isIdentChar(self.peekNext())) {
-        _ = self.advance();
-        _ = self.advance();
-        while (isIdentChar(self.peek())) {
-            _ = self.advance();
-        }
     }
 
     const lexeme = self.source[self.start..self.current];
@@ -209,7 +205,7 @@ fn makeToken(self: *Lexer, token_type: TokenType) Token {
     return Token{
         .type = token_type,
         .lexeme = self.source[self.start..self.current],
-        .line = self.line,
+        .line = self.start_line,
         .column = self.start_column,
     };
 }
@@ -218,7 +214,7 @@ fn makeErrorToken(self: *Lexer, message: []const u8) Token {
     return Token{
         .type = .invalid,
         .lexeme = message,
-        .line = self.line,
+        .line = self.start_line,
         .column = self.start_column,
     };
 }
@@ -244,12 +240,13 @@ fn keywordType(lexeme: []const u8) ?TokenType {
         .{ "true", .kw_true },
         .{ "false", .kw_false },
         .{ "void", .kw_void },
-        .{ "null", .kw_null },
         .{ "pub", .kw_pub },
         .{ "with", .kw_with },
         .{ "import", .kw_import },
         .{ "export", .kw_export },
+        .{ "test", .kw_test },
         .{ "todo", .kw_todo },
+        .{ "echo", .kw_echo },
         .{ "and", .kw_and },
         .{ "or", .kw_or },
         .{ "not", .kw_not },

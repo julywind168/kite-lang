@@ -1,6 +1,7 @@
 const std = @import("std");
 
 pub const TokenType = enum {
+    newline,
     lparen,
     rparen,
     lbracket,
@@ -21,6 +22,7 @@ pub const TokenType = enum {
     less,
     greater,
     question,
+    bang,
 
     eq_eq,
     bang_eq,
@@ -44,12 +46,13 @@ pub const TokenType = enum {
     kw_true,
     kw_false,
     kw_void,
-    kw_null,
     kw_pub,
     kw_with,
     kw_import,
     kw_export,
+    kw_test,
     kw_todo,
+    kw_echo,
     kw_and,
     kw_or,
     kw_not,

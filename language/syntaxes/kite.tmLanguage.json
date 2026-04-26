@@ -7,7 +7,11 @@
     {"include": "#numbers"},
     {"include": "#operators"},
     {
-      "match": "\\b(let|pub|fn|extern|var|struct|type|if|else|match|with|todo|import|export|true|false|null|void|and|or|not)\\b",
+      "match": "\\b(i8|i16|i32|i64|u8|u16|u32|u64|f32|f64|bool|string|char|void|usize)\\b",
+      "name": "storage.type.primitive.kite"
+    },
+    {
+      "match": "\\b(let|pub|fn|extern|var|struct|type|if|else|match|with|todo|echo|import|export|test|true|false|and|or|not)\\b",
       "name": "keyword.control.kite"
     },
     {
@@ -45,6 +49,9 @@
         {"name": "keyword.operator.kite", "match": ">="},
         {"name": "keyword.operator.kite", "match": "->"},
         {"name": "keyword.operator.kite", "match": "=>"},
+        {"name": "keyword.operator.kite", "match": "!"},
+        {"name": "keyword.operator.kite", "match": "\\?"},
+        {"name": "keyword.operator.kite", "match": "\\."},
         {"name": "keyword.operator.kite", "match": "\\+"},
         {"name": "keyword.operator.kite", "match": "\\-"},
         {"name": "keyword.operator.kite", "match": "\\*"},

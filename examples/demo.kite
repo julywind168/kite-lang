@@ -7,8 +7,8 @@ extern struct Vector3 {
 
 extern fn InitWindow(width: i32, height: i32, title: string)
 
-// 2. 带 pub 的公开结构体
-pub struct Entity {
+// 2. 导出结构体
+export struct Entity {
     position: Vector3,
     velocity: Vector3,
     state: EntityState
@@ -21,11 +21,7 @@ fn get_default_speed() f32 {
 
 fn calculate_physics(pos: Vector3, dt: f32) Vector3 {
     let speed = get_default_speed()
-    {
-        x = pos.x + speed * dt,
-        y = pos.y,
-        z = pos.z
-    }
+    { x: pos.x + speed * dt, y: pos.y, z: pos.z }
 }
 
 type EntityState = Idle | Moving(Vector3) | Destroyed
@@ -33,7 +29,7 @@ type EntityState = Idle | Moving(Vector3) | Destroyed
 // 4. 模式匹配与匿名函数 (使用 =>)
 fn update_state(state: EntityState) EntityState {
     match state {
-        | Idle => Moving({x = 0.0, y = 0.0, z = 0.0})
+        | Idle => Moving({ x: 0.0, y: 0.0, z: 0.0 })
         | Moving(p) => Moving(calculate_physics(p, 0.016))
         | _ => state
     }
@@ -42,11 +38,11 @@ fn update_state(state: EntityState) EntityState {
 // 5. 不可变绑定（let 默认不可变）
 let max_entities = 100
 let default_title: string = "Kite Window"
-let gravity: Vector3 = {x = 0.0, y = -9.8, z = 0.0}
+let gravity: Vector3 = { x: 0.0, y: -9.8, z: 0.0 }
 
 // 6. 管道符、高阶函数、索引访问
-fn main() {
-    let entities = [Idle, Moving({x = 1.0, y = 0.0, z = 0.0})]
+export fn main() {
+    let entities = [Idle, Moving({ x: 1.0, y: 0.0, z: 0.0 })]
 
     // 匿名函数使用 =>
     let active_entities = entities
@@ -71,6 +67,10 @@ fn main() {
     print("Kite engine initialized, " <> summary)
 }
 
+test "default speed is positive" {
+    get_default_speed() > 0.0
+}
+
 // 7. with 表达式：回调语法糖（等价 Gleam 的 use）
 // 将后续代码块作为回调传入，消除嵌套
 fn process_profiles(user_ids: [string]) [Profile] {
@@ -90,7 +90,27 @@ fn send_to_server(data: EntityState) {
     todo
 }
 
-// 9. 逻辑运算符：and / or / not
+// 9. 和类型带判别值：可映射到 int（兼容 C ABI）
+type FileError = NotFound = 1 | PermissionDenied = 5 | IoError(string) = -1
+
+// 使用 Result 类型处理错误，? 传播
+fn read_config(path: string) Result(string, FileError) {
+    let file = open_file(path)?        // ? 遇到 Err 则提前返回
+    let content = file.read_all()?
+    content
+}
+
+fn load_default_config() string {
+    open_file("default.conf")!.read_all()!
+}
+
+// 10. echo 调试表达式：求值并打印，返回原值
+fn debug_physics(pos: Vector3, dt: f32) Vector3 {
+    let result = echo calculate_physics(pos, dt)
+    result
+}
+
+// 11. 逻辑运算符：and / or / not
 fn should_cull(entity: Entity, bounds: Bounds) bool {
     let in_view = entity.position.x > bounds.min.x
         and entity.position.x < bounds.max.x
@@ -107,7 +127,7 @@ fn should_cull(entity: Entity, bounds: Bounds) bool {
     not in_view or not is_active
 }
 
-// 10. 可变变量用 var
+// 12. 可变变量用 var
 fn simulate_frame(world: World, dt: f32) World {
     var elapsed = 0.0
     var step_count = 0

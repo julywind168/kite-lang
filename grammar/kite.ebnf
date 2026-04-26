@@ -1,29 +1,31 @@
 (* Kite 语法规范 - 完整版 *)
 
-program = { top_level } ;
+program = { newline } , [ top_level , { top_level_sep , top_level } ] , { newline } ;
 
 (* --- 顶层定义 --- *)
 
 top_level = function_decl | extern_decl | struct_definition | type_definition
-          | import_decl | export_decl | expression ;
+          | import_decl | test_decl | expression ;
+top_level_sep = newline , { newline } ;
 
 (* 顶层函数：fn 方案 *)
-function_decl = [ "pub" ] , [ "extern" ] , "fn" , identifier , "(" , [ param_list ] , ")" , [ type_expr ] , block_expr ;
+function_decl = [ "pub" | "export" ] , [ "extern" ] , "fn" , identifier , "(" , [ param_list ] , ")" , [ type_expr ] , block_expr ;
 
 (* 外部声明：对接 C ABI *)
-extern_decl = "extern" , ( struct_definition | "fn" , identifier , "(" , [ param_list ] , ")" , [ type_expr ] ) ;
+extern_decl = "extern" , ( struct_decl_core | "fn" , identifier , "(" , [ param_list ] , ")" , [ type_expr ] ) ;
 
-struct_definition = [ "pub" ] , "struct" , identifier , "{" , { struct_field } , "}" ;
+struct_definition = [ "pub" | "export" ] , struct_decl_core ;
+struct_decl_core  = "struct" , identifier , "{" , { struct_field } , "}" ;
 struct_field      = identifier , ":" , type_expr , [ "," ] ;
 
 (* 变体类型定义 (Sum Types) *)
 type_definition = [ "pub" ] , "type" , identifier , [ "(" , type_params , ")" ] , "=" , [ "|" ] , variant_list ;
 variant_list    = variant , { "|" , variant } ;
-variant         = identifier , [ "(" , type_list , ")" ] ;
+variant         = identifier , [ "(" , type_list , ")" ] , [ "=" , number ] ;
 
-(* 模块导入导出 *)
+(* 模块导入 *)
 import_decl = "import" , string_lit ;
-export_decl = "export" , expression ;
+test_decl  = "test" , string_lit , block_expr ;
 
 (* --- 绑定与赋值 --- *)
 
@@ -31,7 +33,10 @@ let_binding = ( "let" | "var" ) , identifier , [ ":" , type_expr ] , "=" , expre
 
 (* --- 类型系统 --- *)
 
-type_expr = "i32" | "f32" | "u32" | "bool" | "string" | "void"
+type_expr = "i8" | "i16" | "i32" | "i64"
+          | "u8" | "u16" | "u32" | "u64"
+          | "f32" | "f64"
+          | "bool" | "string" | "char" | "void" | "usize"
           | identifier              (* 用户定义类型 *)
           | "[" , type_expr , "]"   (* 数组类型 *)
           | "(" , [ type_list ] , ")" , "->" , type_expr (* 函数类型使用 -> *)
@@ -42,7 +47,8 @@ type_params = identifier , { "," , identifier } ;
 
 (* --- 表达式层次结构 --- *)
 
-expression = let_binding | assignment_expr ;
+expression = with_expr | let_binding | assignment_expr ;
+expression_no_with = let_binding | assignment_expr ;
 
 assignment_expr = pipeline_expr { "=" , pipeline_expr } ;
 
@@ -60,23 +66,27 @@ concat_expr = add_expr { "<>" , add_expr } ;
 add_expr = mult_expr { ( "+" | "-" ) , mult_expr } ;
 mult_expr = unary_expr { ( "*" | "/" | "%" ) , unary_expr } ;
 
-(* 一元操作符：包含错误传播 ? *)
-unary_expr = [ "not" | "-" | "?" ] , primary_expr ;
+unary_expr = [ "not" | "-" ] , postfix_expr ;
 
 atom = literal
-    | identifier
     | struct_literal
+    | identifier
     | array_literal
     | "(" , expression , ")"
     | block_expr
     | if_expr
     | match_expr
-    | with_expr
     | todo_expr
+    | echo_expr
     | anonymous_func ;
 
 (* 后缀操作：调用、索引、字段访问 *)
-primary_expr = atom , { ( "(" , [ arg_list ] , ")" | "[" , expression , "]" | "." , identifier ) } ;
+postfix_expr = atom , { postfix_op } ;
+postfix_op = "(" , [ arg_list ] , ")"
+           | "[" , expression , "]"
+           | "." , identifier
+           | "?"
+           | "!" ;
 
 (* --- 核心表达式组件 --- *)
 
@@ -86,25 +96,36 @@ anonymous_func = ( identifier | "(" , [ param_list ] , ")" ) , [ type_expr ] , "
 arg_list  = expression , { "," , expression } ;
 
 (* 复合字面量 *)
-struct_literal = "{" , { identifier , "=" , expression , [ "," ] } , "}" ;
+struct_literal = typed_struct_literal | anonymous_struct_literal ;
+typed_struct_literal = identifier , "{" , [ field_init_list ] , [ "," ] , "}" ;
+anonymous_struct_literal = "{" , field_init_list , [ "," ] , "}" ;
+field_init_list = field_init , { "," , field_init } ;
+field_init      = identifier , ":" , expression ;
 array_literal  = "[" , [ arg_list ] , "]" ;
 
-(* 块表达式：最后一行作为返回值 *)
-block_expr = "{" , { expression } , "}" ;
+(* 块表达式：使用换行分隔子表达式，最后一行作为返回值 *)
+block_expr = "{" , { newline } , [ block_tail ] , { newline } , "}" ;
+block_tail = with_expr
+           | expression_no_with , { block_sep , expression_no_with } , [ block_sep , with_expr ] ;
+block_sep  = newline , { newline } ;
 
 (* --- 控制流 --- *)
 
 if_expr = "if" , expression , block_expr , [ "else" , ( if_expr | block_expr ) ] ;
 
-(* 回调语法糖：类似 Gleam 的 use *)
-with_expr = "with" , identifier , "<-" , expression , block_expr ;
+(* 回调语法糖：类似 Gleam 的 use，消费当前 block 的剩余部分 *)
+with_expr = "with" , identifier , "<-" , assignment_expr , block_sep , block_tail ;
 
 (* 占位符：编译通过但运行时报错 *)
 todo_expr = "todo" , [ string_lit ] ;
 
-(* 模式匹配：使用 => *)
-match_expr = "match" , expression , "{" , { match_case } , "}" ;
+(* 调试打印：求值并输出，返回原值 *)
+echo_expr = "echo" , expression ;
+
+(* 模式匹配：分支之间使用换行分隔 *)
+match_expr = "match" , expression , "{" , { newline } , [ match_case , { match_case_sep , match_case } ] , { newline } , "}" ;
 match_case = "|" , pattern , [ "if" , expression ] , "=>" , expression ;
+match_case_sep = newline , { newline } ;
 
 pattern    = literal | identifier | "_" | constructor_pattern ;
 constructor_pattern = identifier , [ "(" , pattern_list , ")" ] ;
@@ -115,9 +136,9 @@ pattern_list = pattern , { "," , pattern } ;
 param_list = param , { "," , param } ;
 param      = identifier , [ ":" , type_expr ] ;
 
-literal    = number | string_lit | "true" | "false" | "null" | "void" ;
+literal    = number | string_lit | "true" | "false" | "void" ;
 simple_identifier = letter , { letter | digit | "_" } ;
-identifier = simple_identifier , { "." , simple_identifier } ;
+identifier = simple_identifier ;
 number     = [ "-" ] , digit , { digit } , [ "." , { digit } ] ;
 
 (* 字符串与转义 *)
@@ -128,3 +149,4 @@ escape_seq = '"' | '\\' | 'n' | 't' | 'r' ;
 (* 词法基础 *)
 letter = ? 'A'..'Z' | 'a'..'z' ? ;
 digit  = ? '0'..'9' ? ;
+newline = ? '\n' ? ;
