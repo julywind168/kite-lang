@@ -9,12 +9,12 @@ top_level = function_decl | extern_decl | struct_definition | type_definition
 top_level_sep = newline , { newline } ;
 
 (* 顶层函数：fn 方案 *)
-function_decl = [ "pub" | "export" ] , [ "extern" ] , "fn" , identifier , "(" , [ param_list ] , ")" , [ type_expr ] , block_expr ;
+function_decl = [ "pub" ] , [ "extern" ] , "fn" , identifier , "(" , [ param_list ] , ")" , [ type_expr ] , block_expr ;
 
 (* 外部声明：对接 C ABI *)
 extern_decl = "extern" , ( struct_decl_core | "fn" , identifier , "(" , [ param_list ] , ")" , [ type_expr ] ) ;
 
-struct_definition = [ "pub" | "export" ] , struct_decl_core ;
+struct_definition = [ "pub" ] , struct_decl_core ;
 struct_decl_core  = "struct" , identifier , "{" , { struct_field } , "}" ;
 struct_field      = identifier , ":" , type_expr , [ "," ] ;
 

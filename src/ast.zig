@@ -1,8 +1,5 @@
 const std = @import("std");
 
-/// 可见性修饰符
-pub const Visibility = enum { pub_, export_ };
-
 /// 字面量类型
 pub const LiteralKind = enum {
     number,
@@ -191,7 +188,7 @@ pub const Expr = union(enum) {
 
 /// 函数声明
 pub const FunctionDecl = struct {
-    visibility: ?Visibility,
+    is_pub: bool,
     is_extern: bool,
     name: []const u8,
     params: []const Param,
@@ -211,14 +208,14 @@ pub const ExternDecl = union(enum) {
 
 /// 结构体定义
 pub const StructDef = struct {
-    visibility: ?Visibility,
+    is_pub: bool,
     name: []const u8,
     fields: []const StructField,
 };
 
 /// 类型定义 (sum type)
 pub const TypeDef = struct {
-    visibility: ?Visibility,
+    is_pub: bool,
     name: []const u8,
     type_params: []const []const u8,
     variants: []const Variant,
@@ -250,7 +247,7 @@ pub const Decl = union(enum) {
         switch (self) {
             .function => |f| {
                 try writer.print("fn {s}", .{f.name});
-                if (f.visibility) |v| try writer.print(" [{s}]", .{@tagName(v)});
+                if (f.is_pub) try writer.writeAll(" [pub]");
                 try writer.writeAll("(");
                 for (f.params, 0..) |p, i| {
                     if (i > 0) try writer.writeAll(", ");
@@ -285,7 +282,7 @@ pub const Decl = union(enum) {
                 try writer.writeAll("\n");
             },
             .struct_def => |s| {
-                if (s.visibility) |v| try writer.print("[{s}] ", .{@tagName(v)});
+                if (s.is_pub) try writer.writeAll("[pub] ");
                 try writer.print("struct {s}\n", .{s.name});
                 for (s.fields) |fld| {
                     try writeIndent(writer, indent + 1);
@@ -295,7 +292,7 @@ pub const Decl = union(enum) {
                 }
             },
             .type_def => |t| {
-                if (t.visibility) |v| try writer.print("[{s}] ", .{@tagName(v)});
+                if (t.is_pub) try writer.writeAll("[pub] ");
                 try writer.print("type {s}", .{t.name});
                 if (t.type_params.len > 0) {
                     try writer.writeAll("(");

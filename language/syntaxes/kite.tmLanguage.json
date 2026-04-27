@@ -11,7 +11,7 @@
       "name": "storage.type.primitive.kite"
     },
     {
-      "match": "\\b(let|pub|fn|extern|var|struct|type|if|else|match|with|todo|echo|import|export|test|true|false|and|or|not)\\b",
+      "match": "\\b(let|pub|fn|extern|var|struct|type|if|else|match|with|todo|echo|import|test|true|false|and|or|not)\\b",
       "name": "keyword.control.kite"
     },
     {
@@ -49,6 +49,10 @@
         {"name": "keyword.operator.kite", "match": ">="},
         {"name": "keyword.operator.kite", "match": "->"},
         {"name": "keyword.operator.kite", "match": "=>"},
+        {"name": "keyword.operator.kite", "match": "="},
+        {"name": "keyword.operator.kite", "match": "<"},
+        {"name": "keyword.operator.kite", "match": ">"},
+        {"name": "keyword.operator.kite", "match": ":"},
         {"name": "keyword.operator.kite", "match": "!"},
         {"name": "keyword.operator.kite", "match": "\\?"},
         {"name": "keyword.operator.kite", "match": "\\."},

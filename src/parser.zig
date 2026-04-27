@@ -130,50 +130,37 @@ fn allocTypeExpr(self: *Parser, te: ast.TypeExpr) ParseError!*ast.TypeExpr {
 // ═══════════════════════════════════════════════════════════════
 
 fn parseTopLevel(self: *Parser) ParseError!ast.Decl {
-    // 检查可见性修饰符
-    var visibility: ?ast.Visibility = null;
-    if (self.match(.kw_pub)) {
-        visibility = .pub_;
-    } else if (self.match(.kw_export)) {
-        visibility = .export_;
-    }
+    const is_pub = self.match(.kw_pub);
 
     switch (self.peek().type) {
-        .kw_fn => return ast.Decl{ .function = try self.parseFunctionDecl(visibility, false) },
+        .kw_fn => return ast.Decl{ .function = try self.parseFunctionDecl(is_pub, false) },
         .kw_extern => {
-            // extern 可能后跟 fn 或 struct
-            if (visibility != null) {
-                return error.UnexpectedToken;
-            }
+            if (is_pub) return error.UnexpectedToken;
             return ast.Decl{ .extern_decl = try self.parseExternDecl() };
         },
         .kw_struct => {
-            // pub/export struct
-            return ast.Decl{ .struct_def = try self.parseStructDef(visibility) };
+            return ast.Decl{ .struct_def = try self.parseStructDef(is_pub) };
         },
         .kw_type => {
-            if (visibility != null and visibility.? == .export_) {
-                return error.UnexpectedToken; // type 只能用 pub
-            }
-            return ast.Decl{ .type_def = try self.parseTypeDef(visibility) };
+            return ast.Decl{ .type_def = try self.parseTypeDef(is_pub) };
         },
         .kw_import => {
-            if (visibility != null) return error.UnexpectedToken;
+            if (is_pub) return error.UnexpectedToken;
             return ast.Decl{ .import_decl = try self.parseImportDecl() };
         },
         .kw_test => {
-            if (visibility != null) return error.UnexpectedToken;
+            if (is_pub) return error.UnexpectedToken;
             return ast.Decl{ .test_decl = try self.parseTestDecl() };
         },
         else => {
-            if (visibility != null) return error.UnexpectedToken;
+            if (is_pub) return error.UnexpectedToken;
             const expr = try self.parseExpression();
             return ast.Decl{ .expression = expr };
         },
     }
 }
 
-fn parseFunctionDecl(self: *Parser, visibility: ?ast.Visibility, is_extern: bool) ParseError!ast.FunctionDecl {
+fn parseFunctionDecl(self: *Parser, is_pub: bool, is_extern: bool) ParseError!ast.FunctionDecl {
     _ = try self.consume(.kw_fn, "expected 'fn'");
     const name_tok = try self.consume(.identifier, "expected function name");
     _ = try self.consume(.lparen, "expected '('");
@@ -190,7 +177,7 @@ fn parseFunctionDecl(self: *Parser, visibility: ?ast.Visibility, is_extern: bool
     const body = try self.parseBlockExpr();
 
     return ast.FunctionDecl{
-        .visibility = visibility,
+        .is_pub = is_pub,
         .is_extern = is_extern,
         .name = name_tok.lexeme,
         .params = params,
@@ -203,7 +190,7 @@ fn parseExternDecl(self: *Parser) ParseError!ast.ExternDecl {
     _ = try self.consume(.kw_extern, "expected 'extern'");
 
     if (self.match(.kw_struct)) {
-        const sd = try self.parseStructBody(null);
+        const sd = try self.parseStructBody(false);
         const ptr = try self.arena.allocator().create(ast.StructDef);
         ptr.* = sd;
         return ast.ExternDecl{ .struct_def = ptr };
@@ -230,12 +217,12 @@ fn parseExternDecl(self: *Parser) ParseError!ast.ExternDecl {
     };
 }
 
-fn parseStructDef(self: *Parser, visibility: ?ast.Visibility) ParseError!ast.StructDef {
+fn parseStructDef(self: *Parser, is_pub: bool) ParseError!ast.StructDef {
     _ = try self.consume(.kw_struct, "expected 'struct'");
-    return self.parseStructBody(visibility);
+    return self.parseStructBody(is_pub);
 }
 
-fn parseStructBody(self: *Parser, visibility: ?ast.Visibility) ParseError!ast.StructDef {
+fn parseStructBody(self: *Parser, is_pub: bool) ParseError!ast.StructDef {
     const name_tok = try self.consume(.identifier, "expected struct name");
     _ = try self.consume(.lbrace, "expected '{'");
 
@@ -256,13 +243,13 @@ fn parseStructBody(self: *Parser, visibility: ?ast.Visibility) ParseError!ast.St
     _ = try self.consume(.rbrace, "expected '}'");
 
     return ast.StructDef{
-        .visibility = visibility,
+        .is_pub = is_pub,
         .name = name_tok.lexeme,
         .fields = try fields.toOwnedSlice(self.arena.allocator()),
     };
 }
 
-fn parseTypeDef(self: *Parser, visibility: ?ast.Visibility) ParseError!ast.TypeDef {
+fn parseTypeDef(self: *Parser, is_pub: bool) ParseError!ast.TypeDef {
     _ = try self.consume(.kw_type, "expected 'type'");
     const name_tok = try self.consume(.identifier, "expected type name");
 
@@ -317,7 +304,7 @@ fn parseTypeDef(self: *Parser, visibility: ?ast.Visibility) ParseError!ast.TypeD
     }
 
     return ast.TypeDef{
-        .visibility = visibility,
+        .is_pub = is_pub,
         .name = name_tok.lexeme,
         .type_params = type_params,
         .variants = try variants.toOwnedSlice(self.arena.allocator()),

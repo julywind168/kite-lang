@@ -243,7 +243,6 @@ fn keywordType(lexeme: []const u8) ?TokenType {
         .{ "pub", .kw_pub },
         .{ "with", .kw_with },
         .{ "import", .kw_import },
-        .{ "export", .kw_export },
         .{ "test", .kw_test },
         .{ "todo", .kw_todo },
         .{ "echo", .kw_echo },

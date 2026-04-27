@@ -8,7 +8,7 @@ extern struct Vector3 {
 extern fn InitWindow(width: i32, height: i32, title: string)
 
 // 2. 导出结构体
-export struct Entity {
+pub struct Entity {
     position: Vector3,
     velocity: Vector3,
     state: EntityState
@@ -41,7 +41,7 @@ let default_title: string = "Kite Window"
 let gravity: Vector3 = { x: 0.0, y: -9.8, z: 0.0 }
 
 // 6. 管道符、高阶函数、索引访问
-export fn main() {
+pub fn main() {
     let entities = [Idle, Moving({ x: 1.0, y: 0.0, z: 0.0 })]
 
     // 匿名函数使用 =>
@@ -64,7 +64,7 @@ export fn main() {
         "Active entities present"
     }
 
-    print("Kite engine initialized, " <> summary)
+    echo "Kite engine initialized, " <> summary
 }
 
 test "default speed is positive" {

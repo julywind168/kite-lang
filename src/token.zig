@@ -49,7 +49,6 @@ pub const TokenType = enum {
     kw_pub,
     kw_with,
     kw_import,
-    kw_export,
     kw_test,
     kw_todo,
     kw_echo,
