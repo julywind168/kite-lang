@@ -5,7 +5,31 @@
     {"include": "#comments"},
     {"include": "#strings"},
     {"include": "#numbers"},
-    {"include": "#operators"},
+    {
+      "comment": "函数定义：匹配 fn 后面的名称",
+      "match": "\\b(fn)\\s+([a-zA-Z_][a-zA-Z0-9_]*)",
+      "captures": {
+        "1": { "name": "keyword.control.kite" },
+        "2": { "name": "entity.name.function.kite" }
+      }
+    },
+    {
+      "comment": "类型定义：匹配 (pub|extern) struct/type 名称",
+      "match": "\\b(?:(pub|extern)\\s+)?(struct|type)\\s+([A-Za-z_][A-Za-z0-9_]*)",
+      "captures": {
+        "1": { "name": "keyword.control.kite" },
+        "2": { "name": "storage.type.kite" },
+        "3": { "name": "entity.name.type.kite" }
+      }
+    },
+    {
+      "comment": "枚举变体：同时捕获符号和标识符",
+      "match": "(\\||=)\\s*([A-Z][a-zA-Z0-9_]*)",
+      "captures": {
+        "1": { "name": "keyword.operator.kite" },
+        "2": { "name": "variable.other.enummember.kite" }
+      }
+    },
     {
       "match": "\\b(i8|i16|i32|i64|u8|u16|u32|u64|f32|f64|bool|string|char|void|usize)\\b",
       "name": "storage.type.primitive.kite"
@@ -15,9 +39,12 @@
       "name": "keyword.control.kite"
     },
     {
-      "match": "\\b([A-Za-z_][A-Za-z0-9_]*)\\b",
-      "name": "identifier.kite"
-    }
+      "comment": "函数调用：匹配后面跟着左括号的标识符",
+      "match": "\\b([a-zA-Z_][a-zA-Z0-9_]*)\\s*(?=\\()",
+      "name": "entity.name.function.kite"
+    },
+    {"include": "#operators"},
+    {"include": "#discards"}
   ],
   "repository": {
     "comments": {
@@ -63,6 +90,10 @@
         {"name": "keyword.operator.kite", "match": "%"},
         {"name": "keyword.operator.kite", "match": "\\|"}
       ]
+    },
+    "discards": {
+      "name": "comment.unused.kite",
+      "match": "\\b_[A-Za-z0-9_]*\\b"
     }
   },
   "fileTypes": ["kite"]
