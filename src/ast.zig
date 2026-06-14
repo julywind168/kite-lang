@@ -321,7 +321,7 @@ pub const Decl = union(enum) {
                 try writer.writeAll("\n");
             },
             .import_decl => |i| {
-                try writer.print("import \"{s}\"\n", .{i.path});
+                try writer.print("import {s}\n", .{i.path});
             },
             .test_decl => |t| {
                 try writer.print("test \"{s}\"\n", .{t.name});

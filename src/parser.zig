@@ -171,6 +171,7 @@ fn parseFunctionDecl(self: *Parser, is_pub: bool, is_extern: bool) ParseError!as
 
     var return_type: ?*ast.TypeExpr = null;
     if (!self.check(.lbrace)) {
+        _ = try self.consume(.minus_greater, "expected '->'");
         return_type = try self.parseTypeExpr();
     }
 
@@ -205,6 +206,7 @@ fn parseExternDecl(self: *Parser) ParseError!ast.ExternDecl {
 
     var return_type: ?*ast.TypeExpr = null;
     if (!self.check(.newline) and !self.check(.eof)) {
+        _ = try self.consume(.minus_greater, "expected '->'");
         return_type = try self.parseTypeExpr();
     }
 
@@ -313,8 +315,20 @@ fn parseTypeDef(self: *Parser, is_pub: bool) ParseError!ast.TypeDef {
 
 fn parseImportDecl(self: *Parser) ParseError!ast.ImportDecl {
     _ = try self.consume(.kw_import, "expected 'import'");
-    const path_tok = try self.consume(.string, "expected import path string");
-    return ast.ImportDecl{ .path = path_tok.lexeme };
+
+    var path = std.ArrayList(u8).empty;
+    errdefer path.deinit(self.arena.allocator());
+
+    const first = try self.consume(.identifier, "expected module path");
+    try path.appendSlice(self.arena.allocator(), first.lexeme);
+
+    while (self.match(.slash)) {
+        try path.append(self.arena.allocator(), '/');
+        const segment = try self.consume(.identifier, "expected module name");
+        try path.appendSlice(self.arena.allocator(), segment.lexeme);
+    }
+
+    return ast.ImportDecl{ .path = try path.toOwnedSlice(self.arena.allocator()) };
 }
 
 fn parseTestDecl(self: *Parser) ParseError!ast.TestDecl {
@@ -741,7 +755,7 @@ fn tryParseAnonFuncParens(self: *Parser) ?*ast.Expr {
 
     // 可选返回类型
     var return_type: ?*ast.TypeExpr = null;
-    if (self.match(.colon)) {
+    if (self.match(.minus_greater)) {
         return_type = self.parseTypeExpr() catch return null;
     }
 

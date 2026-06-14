@@ -9,10 +9,10 @@ top_level = function_decl | extern_decl | struct_definition | type_definition
 top_level_sep = newline , { newline } ;
 
 (* 顶层函数：fn 方案 *)
-function_decl = [ "pub" ] , [ "extern" ] , "fn" , identifier , "(" , [ param_list ] , ")" , [ type_expr ] , block_expr ;
+function_decl = [ "pub" ] , [ "extern" ] , "fn" , identifier , "(" , [ param_list ] , ")" , [ "->" , type_expr ] , block_expr ;
 
 (* 外部声明：对接 C ABI *)
-extern_decl = "extern" , ( struct_decl_core | "fn" , identifier , "(" , [ param_list ] , ")" , [ type_expr ] ) ;
+extern_decl = "extern" , ( struct_decl_core | "fn" , identifier , "(" , [ param_list ] , ")" , [ "->" , type_expr ] ) ;
 
 struct_definition = [ "pub" ] , struct_decl_core ;
 struct_decl_core  = "struct" , identifier , "{" , { struct_field } , "}" ;
@@ -24,7 +24,8 @@ variant_list    = variant , { "|" , variant } ;
 variant         = identifier , [ "(" , type_list , ")" ] , [ "=" , number ] ;
 
 (* 模块导入 *)
-import_decl = "import" , string_lit ;
+import_decl = "import" , import_path ;
+import_path = identifier , { "/" , identifier } ;
 test_decl  = "test" , string_lit , block_expr ;
 
 (* --- 绑定与赋值 --- *)
@@ -91,7 +92,7 @@ postfix_op = "(" , [ arg_list ] , ")"
 (* --- 核心表达式组件 --- *)
 
 (* 匿名函数：使用 => 箭头 *)
-anonymous_func = ( identifier | "(" , [ param_list ] , ")" ) , [ type_expr ] , "=>" , ( expression | block_expr ) ;
+anonymous_func = ( identifier | "(" , [ param_list ] , ")" ) , [ "->" , type_expr ] , "=>" , ( expression | block_expr ) ;
 
 arg_list  = expression , { "," , expression } ;
 

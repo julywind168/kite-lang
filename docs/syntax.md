@@ -107,11 +107,11 @@ Identifier(Type, ...)    -- 泛型类型如 Option(t)
 ### 函数
 
 ```
-fn add(x: i32, y: i32) i32 {
+fn add(x: i32, y: i32) -> i32 {
     x + y              -- 最后一行自动返回
 }
 
-pub fn make_vec() Vector3 {
+pub fn make_vec() -> Vector3 {
     { x: 0.0, y: 0.0, z: 0.0 }
 }
 
@@ -158,7 +158,7 @@ extern fn InitWindow(width: i32, height: i32, title: string)
 ### 模块
 
 ```
-import "game/math.kite"
+import game/math
 ```
 
 ### 测试
@@ -191,8 +191,8 @@ type Result(t, e) = Ok(t) | Err(e)
 `?` 后置于可能失败的表达式。若结果为 `Err(e)` 则立即从当前函数返回该错误；若为 `Ok(v)` 则提取值 `v` 继续执行。
 
 ```
-fn read_config(path: string) Result(string, FileError) {
-    let file = open_file(path)?      -- Err 时提前返回
+fn read_config(path: string) -> Result(string, FileError) {
+    let file = open_file(path)?    -- Err 时提前返回
     let content = file.read_all()?   -- Ok 时解包继续
     content
 }
@@ -203,7 +203,7 @@ fn read_config(path: string) Result(string, FileError) {
 `!` 也是后缀操作符，用于“必须成功”的场景。若结果为失败值，则立即触发运行时中止；若成功，则提取内部值继续执行。
 
 ```
-fn load_default_config() string {
+fn load_default_config() -> string {
     open_file("default.conf")!.read_all()!
 }
 ```
@@ -312,7 +312,7 @@ profile
 ### 占位符
 
 ```
-fn not_ready(yet: i32) bool {
+fn not_ready(yet: i32) -> bool {
     todo "等设计确定后再实现"
 }
 
