@@ -1,6 +1,7 @@
 const std = @import("std");
 const Lexer = @import("lexer.zig").Lexer;
 const Parser = @import("parser.zig").Parser;
+const TypeChecker = @import("typechecker.zig").TypeChecker;
 
 pub fn main(init: std.process.Init) !void {
     const args = try std.process.Args.toSlice(init.minimal.args, init.arena.allocator());
@@ -35,6 +36,17 @@ pub fn main(init: std.process.Init) !void {
         });
         return;
     };
+
+    // Type Checker: 类型检查
+    var tc = TypeChecker.init(init.gpa);
+    defer tc.deinit();
+    const ok = tc.check(program);
+
+    if (!ok) {
+        std.debug.print("type check failed:\n", .{});
+        tc.reportErrors();
+        return;
+    }
 
     // 打印 AST
     std.debug.print("=== Kite AST ({s}) [{d} decls] ===\n\n", .{ file_path, program.declarations.len });

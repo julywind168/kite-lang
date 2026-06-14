@@ -607,8 +607,10 @@ fn parseAtom(self: *Parser) ParseError!*ast.Expr {
                 const name_tok = self.advance();
                 _ = self.advance(); // =>
                 const body = try self.parseExpressionOrBlock();
+                var params = std.ArrayList(ast.Param).empty;
+                params.append(self.arena.allocator(), .{ .name = name_tok.lexeme, .type_ann = null }) catch return error.OutOfMemory;
                 return self.allocExpr(.{ .anon_func = .{
-                    .params = &.{.{ .name = name_tok.lexeme, .type_ann = null }},
+                    .params = params.items,
                     .return_type = null,
                     .body = body,
                 } });
@@ -724,8 +726,10 @@ fn tryParseAnonFuncAfterColon(self: *Parser, param_name: []const u8) ?*ast.Expr 
     const ret_type = self.parseTypeExpr() catch return null;
     if (!self.match(.eq_greater)) return null;
     const body = self.parseExpressionOrBlock() catch return null;
+    var params = std.ArrayList(ast.Param).empty;
+    params.append(self.arena.allocator(), .{ .name = param_name, .type_ann = null }) catch return null;
     return self.allocExpr(.{ .anon_func = .{
-        .params = &.{.{ .name = param_name, .type_ann = null }},
+        .params = params.items,
         .return_type = ret_type,
         .body = body,
     } }) catch null;
